@@ -5,7 +5,18 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from ytdl.core import Extractor, ExtractorError
+from pathlib import Path
+
+from rich.progress import (
+    BarColumn,
+    DownloadColumn,
+    Progress,
+    TextColumn,
+    TimeRemainingColumn,
+    TransferSpeedColumn,
+)
+
+from ytdl.core import Downloader, DownloaderError, Extractor, ExtractorError
 
 app = typer.Typer(
     help="YouTube Downloader",
@@ -67,6 +78,64 @@ def info(
             )
         
         console.print(table)
+
+@app.command()
+def download(
+    url: str = typer.Argument(..., help="YouTube video URL"),
+    quality: str = typer.Option(
+        "best", "--quality", "-q",
+        help="Video quality: best, 1080p, 720p, 480p, 360p",
+    ),
+    audio_only: bool = typer.Option(
+        False, "--audio", "-a",
+        help="Download audio only (mp3)",
+    ),
+    output_dir: Path = typer.Option(
+        Path("downloads"), "--output", "-o",
+        help="Output directory",
+    ),
+):
+    """Download a video from URL."""
+    # Progress bar
+    progress = Progress(
+        TextColumn("[bold cyan]{task.description}"),
+        BarColumn(),
+        DownloadColumn(),
+        TransferSpeedColumn(),
+        TimeRemainingColumn(),
+    )
+    
+    with progress:
+        task_id = progress.add_task("Preparing...", total=None)
+        
+        def hook(d):
+            if d["status"] == "downloading":
+                total = d.get("total_bytes") or d.get("total_bytes_estimate")
+                downloaded = d.get("downloaded_bytes", 0)
+                progress.update(
+                    task_id,
+                    total=total,
+                    completed=downloaded,
+                    description="Downloading",
+                )
+            elif d["status"] == "finished":
+                progress.update(task_id, description="Processing...")
+        
+        downloader = Downloader(output_dir=output_dir)
+        
+        try:
+            path = downloader.download(
+                url,
+                quality=quality,
+                audio_only=audio_only,
+                progress_hook=hook,
+            )
+        except DownloaderError as e:
+            progress.stop()
+            console.print(f"[bold red]Error:[/bold red] {e}")
+            raise typer.Exit(code=1)
+    
+    console.print(f"\n[bold green]✓[/bold green] Saved to: [cyan]{path}[/cyan]")
 
 
 @app.command()
