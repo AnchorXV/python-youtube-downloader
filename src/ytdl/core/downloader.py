@@ -7,6 +7,27 @@ import yt_dlp
 
 from ytdl.core.models import VideoInfo
 
+VALID_QUALITIES = ["best", "1080p", "720p", "480p", "360p", "240p", "144p"]
+
+
+def validate_quality(quality: str) -> str:
+    """Validate quality string.
+
+    Args:
+        quality: quality string like "best", "720p".
+
+    Returns:
+        The validated quality string.
+
+    Raises:
+        ValueError: if quality is not recognized.
+    """
+    if quality not in VALID_QUALITIES:
+        raise ValueError(
+            f"Invalid quality: {quality!r}. "
+            f"Valid options: {', '.join(VALID_QUALITIES)}"
+        )
+    return quality
 
 class DownloaderError(Exception):
     """Error when downloading video."""
@@ -32,6 +53,7 @@ class Downloader:
         progress_hook: Callable | None = None,
     ) -> dict:
         """Build yt-dlp options for downloading."""
+        validate_quality(quality)
         # Format selector
         if audio_only:
             fmt = "bestaudio/best"
