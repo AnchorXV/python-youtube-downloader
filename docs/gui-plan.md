@@ -53,18 +53,17 @@
 
 ## Struktur File
 
-src/ytdl/gui/
-├── init.py
-├── app.py
-├── main_window.py
-├── workers.py
-└── widgets/
-├── init.py
-├── url_bar.py
-├── info_panel.py
-├── options_panel.py
-├── progress_panel.py
-└── log_panel.py
+src/ytdl/
+├── core/               # Logika yt-dlp backend
+└── gui/
+    ├── __init__.py
+    ├── app.py          # QApplication entry point
+    ├── main_window.py  # QMainWindow & QSplitter setup
+    ├── workers.py      # QThread untuk Fetch & Download
+    └── widgets/
+        ├── __init__.py
+        ├── left_panel.py   # Input, Metadata, & Options
+        └── right_panel.py  # Progress & Log Console
 
 
 ## Roadmap
