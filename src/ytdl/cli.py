@@ -124,7 +124,7 @@ def download(
         downloader = Downloader(output_dir=output_dir)
         
         try:
-            path = downloader.download(
+            result = downloader.download(
                 url,
                 quality=quality,
                 audio_only=audio_only,
@@ -135,7 +135,10 @@ def download(
             console.print(f"[bold red]Error:[/bold red] {e}")
             raise typer.Exit(code=1)
     
-    console.print(f"\n[bold green]✓[/bold green] Saved to: [cyan]{path}[/cyan]")
+    console.print(f"\n[bold green]✓[/bold green] Downloaded: [cyan]{result.title}[/cyan]")
+    console.print(f"  [dim]Quality:[/dim] {result.quality}")
+    console.print(f"  [dim]Format :[/dim] {result.ext} (id={result.format_id})")
+    console.print(f"  [dim]Saved  :[/dim] [cyan]{result.path}[/cyan]")
 
 
 @app.command()
