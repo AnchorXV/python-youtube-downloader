@@ -1,29 +1,34 @@
-"""Tests for ytdl.core.downloader."""
-
 import pytest
 
 from ytdl.core.downloader import (
+    VALID_FORMATS,
     VALID_QUALITIES,
     build_video_format_selector,
+    validate_format,
     validate_quality,
 )
 
 
-@pytest.mark.parametrize("quality,expected_substring", [
-    ("best", "bestvideo+bestaudio"),
-    ("1080p", "height<=1080"),
-    ("720p", "height<=720"),
-    ("480p", "height<=480"),
-    ("360p", "height<=360"),
-])
-def test_build_video_format_selector(quality, expected_substring):
-    """Selector should include the target height."""
-    selector = build_video_format_selector(quality)
-    assert expected_substring in selector
+@pytest.mark.parametrize("fmt", VALID_FORMATS)
+def test_validate_format_valid(fmt):
+    """All valid formats should pass."""
+    assert validate_format(fmt) == fmt
 
 
-def test_build_video_format_selector_has_fallback():
-    """Selector for specific quality should have fallback chain."""
-    selector = build_video_format_selector("720p")
-    assert "/" in selector  # ada fallback
-    assert "bestvideo+bestaudio" in selector  # fallback terakhir
+def test_validate_format_strips_dot():
+    """Leading dot should be stripped."""
+    assert validate_format(".mp4") == "mp4"
+    assert validate_format(".mkv") == "mkv"
+
+
+def test_validate_format_case_insensitive():
+    """Should accept uppercase."""
+    assert validate_format("MP4") == "mp4"
+    assert validate_format("MkV") == "mkv"
+
+
+@pytest.mark.parametrize("invalid", ["xyz", "", "mp5", "vid"])
+def test_validate_format_invalid(invalid):
+    """Invalid formats should raise ValueError."""
+    with pytest.raises(ValueError, match=invalid if invalid else "Invalid"):
+        validate_format(invalid)

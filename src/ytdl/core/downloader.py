@@ -10,6 +10,7 @@ from ytdl.core.models import VideoInfo
 
 
 VALID_QUALITIES = ["best", "1080p", "720p", "480p", "360p", "240p", "144p"]
+VALID_FORMATS = ["mp4", "mkv", "webm", "mov", "avi", "wmv"]
 
 
 def validate_quality(quality: str) -> str:
@@ -32,6 +33,27 @@ def validate_quality(quality: str) -> str:
     return quality
 
 
+def validate_format(fmt: str) -> str:
+    """Validate output format.
+
+    Args:
+        fmt: format extension like "mp4", "mkv".
+
+    Returns:
+        The validated format (lowercase, no dot).
+
+    Raises:
+        ValueError: if format is not recognized.
+    """
+    fmt = fmt.lower().lstrip(".")
+    if fmt not in VALID_FORMATS:
+        raise ValueError(
+            f"Invalid format: {fmt!r}. "
+            f"Valid options: {', '.join(VALID_FORMATS)}"
+        )
+    return fmt
+
+
 def build_video_format_selector(quality: str) -> str:
     """Build yt-dlp format selector for a given quality.
 
@@ -47,10 +69,8 @@ def build_video_format_selector(quality: str) -> str:
     if quality == "best":
         return "bestvideo+bestaudio/best"
 
-    # Extract height from "720p" -> "720"
     height = quality.rstrip("p")
 
-    # Fallback chain: try highest available <= target
     return (
         f"bestvideo[height<={height}]+bestaudio/"
         f"best[height<={height}]/"
@@ -90,10 +110,13 @@ class Downloader:
         self,
         quality: str = "best",
         audio_only: bool = False,
+        output_format: str | None = None,
         progress_hook: Callable | None = None,
     ) -> dict:
         """Build yt-dlp options for downloading."""
         validate_quality(quality)
+        if output_format:
+            output_format = validate_format(output_format)
 
         # Format selector
         if audio_only:
@@ -101,7 +124,6 @@ class Downloader:
         else:
             fmt = build_video_format_selector(quality)
 
-        # Output template: downloads/<title>.<ext>
         outtmpl = str(self.output_dir / "%(title)s.%(ext)s")
 
         opts = {
@@ -114,13 +136,24 @@ class Downloader:
             "restrictfilenames": True,
         }
 
-        # Audio only: convert to mp3
+        # Postprocessors
+        postprocessors = []
+
         if audio_only:
-            opts["postprocessors"] = [{
+            postprocessors.append({
                 "key": "FFmpegExtractAudio",
                 "preferredcodec": "mp3",
                 "preferredquality": "192",
-            }]
+            })
+
+        if output_format and not audio_only:
+            postprocessors.append({
+                "key": "FFmpegVideoConvertor",
+                "preferedformat": output_format,   # yes, "prefered" (1 'r') is correct
+            })
+
+        if postprocessors:
+            opts["postprocessors"] = postprocessors
 
         return opts
 
@@ -129,10 +162,13 @@ class Downloader:
         url: str,
         quality: str = "best",
         audio_only: bool = False,
+        output_format: str | None = None,
         progress_hook: Callable | None = None,
     ) -> DownloadResult:
         """Download video from URL."""
-        opts = self._build_options(quality, audio_only, progress_hook)
+        opts = self._build_options(
+            quality, audio_only, output_format, progress_hook
+        )
 
         try:
             with yt_dlp.YoutubeDL(opts) as ydl:
@@ -142,8 +178,12 @@ class Downloader:
 
         # Filename
         filename = ydl.prepare_filename(info)
+
+        # Postprocessor might change extension
         if audio_only:
             filename = str(Path(filename).with_suffix(".mp3"))
+        elif output_format:
+            filename = str(Path(filename).with_suffix(f".{output_format}"))
 
         return DownloadResult(
             path=Path(filename),

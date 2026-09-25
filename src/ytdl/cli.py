@@ -84,7 +84,11 @@ def download(
     url: str = typer.Argument(..., help="YouTube video URL"),
     quality: str = typer.Option(
         "best", "--quality", "-q",
-        help="Video quality: best, 1080p, 720p, 480p, 360p",
+        help="Video quality: best, 1080p, 720p, 480p, 360p, 240p, 144p",
+    ),
+    output_format: str | None = typer.Option(
+        None, "--format", "-F",
+        help="Output format: mp4, mkv, webm, mov, avi, wmv",
     ),
     audio_only: bool = typer.Option(
         False, "--audio", "-a",
@@ -128,6 +132,7 @@ def download(
                 url,
                 quality=quality,
                 audio_only=audio_only,
+                output_format=output_format,
                 progress_hook=hook,
             )
         except DownloaderError as e:
