@@ -17,6 +17,7 @@ from rich.progress import (
 )
 
 from ytdl.core import Downloader, DownloaderError, Extractor, ExtractorError
+from ytdl.services.config import load_config
 
 app = typer.Typer(
     help="YouTube Downloader",
@@ -82,24 +83,38 @@ def info(
 @app.command()
 def download(
     url: str = typer.Argument(..., help="YouTube video URL"),
-    quality: str = typer.Option(
-        "best", "--quality", "-q",
+    quality: str | None = typer.Option(
+        None, "--quality", "-q",
         help="Video quality: best, 1080p, 720p, 480p, 360p, 240p, 144p",
     ),
     output_format: str | None = typer.Option(
         None, "--format", "-F",
         help="Output format: mp4, mkv, webm, mov, avi, wmv",
     ),
-    audio_only: bool = typer.Option(
-        False, "--audio", "-a",
+    audio_only: bool | None = typer.Option(
+        None, "--audio", "-a",
         help="Download audio only (mp3)",
     ),
-    output_dir: Path = typer.Option(
-        Path("downloads"), "--output", "-o",
+    output_dir: Path | None = typer.Option(
+        None, "--output", "-o",
         help="Output directory",
+    ),
+    config_path: Path = typer.Option(
+        Path("config.yaml"), "--config", "-c",
+        help="Path to config file",
     ),
 ):
     """Download a video from URL."""
+    # Load config
+    config = load_config(config_path)
+    cfg = config.download
+    
+    # CLI args override config
+    quality = quality or cfg.quality
+    output_format = output_format or cfg.format
+    audio_only = cfg.audio_only if audio_only is None else audio_only
+    output_dir = output_dir or Path(cfg.output_dir)
+    
     # Progress bar
     progress = Progress(
         TextColumn("[bold cyan]{task.description}"),

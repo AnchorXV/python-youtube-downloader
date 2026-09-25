@@ -1,0 +1,8 @@
+# ytdl configuration
+# Priority: CLI args > this file > hardcoded defaults
+
+download:
+  output_dir: downloads
+  quality: best
+  format: null       # null = keep original format
+  audio_only: false

@@ -3,3 +3,5 @@ yt-dlp-ejs
 typer[all]
 rich
 pytest
+pydantic
+pyyaml
