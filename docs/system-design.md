@@ -9,7 +9,6 @@
 - **Typography**: Via `QFont` (load Plus Jakarta Sans + JetBrains Mono)
 - **Radius**: Via QSS `border-radius`
 - **Elevation**: Via QSS `border` + simple `box-shadow` (not multi-layer)
-- **Glassmorphism**: SKIP backdrop blur, pakai semi-transparent solid colors
 - **Custom widgets**: Hanya untuk progress bar & log panel (opsional)
 
 ## Layout Final
