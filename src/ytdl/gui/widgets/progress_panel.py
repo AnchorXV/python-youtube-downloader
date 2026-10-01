@@ -26,3 +26,16 @@ class ProgressPanel(QGroupBox):
         self.status_label.setObjectName("metaLabel")
         self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.status_label)
+
+    def set_status(self, text: str):
+        """Update the status label."""
+        self.status_label.setText(text)
+
+    def set_progress(self, value: int):
+        """Set progress value (0-100)."""
+        self.progress_bar.setValue(value)
+
+    def reset(self):
+        """Reset to initial state."""
+        self.progress_bar.setValue(0)
+        self.status_label.setText("Ready")

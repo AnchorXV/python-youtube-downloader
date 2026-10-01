@@ -4,8 +4,9 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QVBoxLayout,
-    QWidget,
 )
+
+from ytdl.core.models import VideoInfo
 
 
 class InfoPanel(QGroupBox):
@@ -45,3 +46,16 @@ class InfoPanel(QGroupBox):
 
         info_layout.addStretch()
         layout.addLayout(info_layout, stretch=1)
+
+    def set_video_info(self, video: VideoInfo):
+        """Populate panel with video data."""
+        self.title_label.setText(video.title)
+        self.uploader_label.setText(f"Uploader: {video.uploader}")
+        self.duration_label.setText(f"Duration: {video.duration_str}")
+
+    def clear(self):
+        """Reset panel to empty state."""
+        self.title_label.setText("No video loaded")
+        self.uploader_label.setText("Uploader: —")
+        self.duration_label.setText("Duration: —")
+        self.thumbnail.setText("No thumbnail")

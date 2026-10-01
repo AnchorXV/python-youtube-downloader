@@ -53,3 +53,46 @@ def test_get_info_raises_on_download_error():
         
         with pytest.raises(ExtractorError, match="Failed to fetch"):
             extractor.get_info("https://youtu.be/invalid")
+
+def test_get_info_rejects_playlist():
+    """Playlist URLs should be rejected."""
+    from ytdl.core import ExtractorError
+    
+    fake_playlist_data = {
+        "id": "PLxxx",
+        "title": "My Playlist",
+        "_type": "playlist",
+        "formats": [],
+    }
+    
+    with patch("ytdl.core.extractor.yt_dlp.YoutubeDL") as mock_ydl_class:
+        mock_ydl_instance = MagicMock()
+        mock_ydl_instance.extract_info.return_value = fake_playlist_data
+        mock_ydl_class.return_value.__enter__.return_value = mock_ydl_instance
+        
+        extractor = Extractor()
+        with pytest.raises(ExtractorError, match="single video"):
+            extractor.get_info("https://youtube.com/playlist?list=xxx")
+
+
+def test_get_info_rejects_no_formats():
+    """Videos with no formats should be rejected."""
+    from ytdl.core import ExtractorError
+    
+    fake_no_formats = {
+        "id": "abc",
+        "title": "Empty",
+        "duration": 0,
+        "uploader": "Test",
+        "webpage_url": "https://youtube.com/watch?v=abc",
+        "formats": [],
+    }
+    
+    with patch("ytdl.core.extractor.yt_dlp.YoutubeDL") as mock_ydl_class:
+        mock_ydl_instance = MagicMock()
+        mock_ydl_instance.extract_info.return_value = fake_no_formats
+        mock_ydl_class.return_value.__enter__.return_value = mock_ydl_instance
+        
+        extractor = Extractor()
+        with pytest.raises(ExtractorError, match="No video formats"):
+            extractor.get_info("https://youtube.com/watch?v=abc")
